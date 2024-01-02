@@ -1,0 +1,6 @@
+ans = 0 
+min = float('inf')
+if min == float('inf'):
+    print("Hello")
+else:
+    print("Hi")

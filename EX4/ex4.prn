@@ -1,0 +1,198 @@
+Script started on Mon 21 Aug 2023 08:01:55 AM IST
+[?1034h[20bcs098@mepcolinux ~]$cat 4.py
+import pandas as pd
+import math
+
+def calculate_counts(data, column):
+    counts = data[column].value_counts().to_dict()
+    return counts
+
+def calculate_entropy(counts):
+    total_count = sum(counts.values())
+    entropy = 0
+    for count in counts.values():
+        probability = count / total_count
+        entropy -= probability * math.log2(probability)
+    return round(entropy, 3)
+
+def calculate_column_entropy(data, column):
+    counts = calculate_counts(data, column)
+    entropy = calculate_entropy(counts)
+    return entropy, counts
+
+def calculate_information_gain(data, column, target):
+    dataset_entropy = calculate_entropy(calculate_counts(data, target))
+
+    unique_values = data[column].unique()
+    weighted_entropies = 0
+    for value in unique_values:
+        subset = data[data[column] == value]
+        subset_entropy = calculate_entropy(calculate_counts(subset, target))
+        weighted_entropies += (len(subset) / len(data)) * subset_entropy
+
+    information_gain = dataset_entropy - weighted_entropies
+    return round(information_gain, 3),round(weighted_entropies,3)
+
+def find_root_node(data, target, column_names, excluded_columns):
+    max_info_gain = -1
+    root_column = None
+
+    for column in column_names:
+        if column not in excluded_columns and column != target:
+            info_gain,weigh_entropy = calculate_information_gain(data, column, target)
+            if info_gain > max_info_gain:
+                max_info_gain = info_gain
+                root_column = column
+
+    return root_column
+
+data = pd.read_csv('ex4/play_tennis.csv')
+target_column = data.columns[-1]
+column_names = data.columns[1:-1]
+excluded_columns = ['Day']
+info_gains=[]
+
+dataset_entropy = calculate_entropy(calculate_counts(data, target_column))
+print("================================================")
+print("Entropy of Entire Dataset = ", dataset_entropy)
+print(f"Yes count: {calculate_counts(data, target_column).get('Yes', 0)}")
+print(f"No count: {calculate_counts(data, target_column).get('No', 0)}")
+print(f"Splits:",column_names.values)
+print()
+i=0
+
+for column in column_names:
+    print("================================================")
+    print(f"Split: {column}")
+    print(f"\n{column} Count:", calculate_counts(data, column))
+    unique_values = data[column].unique()
+    for value in unique_values:
+        subset = data[data[column] == value]
+        subset_counts = calculate_counts(subset, target_column)
+        print(f"\nCounts of {column} - {value}: {subset_counts}")
+        print(f"Entropy for {column} - {value}: {calculate_entropy(calculate_counts(subset, target_column))}\n")
+
+    info_gain,weighted_entropy = calculate_information_gain(data, column, target_column)
+    print(f"Entropy for {column}:",weighted_entropy)
+    info_gains.append(info_gain)
+    print(f"\nInformation Gain of {column} = ",info_gain)
+
+    print()
+
+print("================================================")
+root_node = find_root_node(data, target_column, column_names, excluded_columns)
+print("Information Gain:")
+for i in range(len(column_names)):
+    print(f"{column_names[i]} = {info_gains[i]}")
+print("\nMaximum Information Gain:",max(info_gains))
+print(f"Root Node of the decision tree is: {root_node}")
+print("================================================")
+[20bcs098@mepcolinux ex4]$cat play_tennis.csv
+Day,Outlook,Temperature,Humidity,Wind,PlayTennis
+D1,Sunny,Hot,High,Weak,No
+D2,Sunny,Hot,High,Strong,No
+D3,Overcast,Hot,High,Weak,Yes
+D4,Rain,Mild,High,Weak,Yes
+D5,Rain,Cool,Normal,Weak,Yes
+D6,Rain,Cool,Normal,Strong,No
+D7,Overcast,Cool,Normal,Strong,Yes
+D8,Sunny,Mild,High,Weak,No
+D9,Sunny,Cool,Normal,Weak,Yes
+D10,Rain,Mild,Normal,Weak,Yes
+D11,Sunny,Mild,Normal,Strong,Yes
+D12,Overcast,Mild,High,Strong,Yes
+D13,Overcast,Hot,Normal,Weak,Yes
+D14,Rain,Mild,High,Strong,No
+[20bcs098@mepcolinux ex4]$cat result.txt
+================================================
+Entropy of Entire Dataset =  0.94
+Yes count: 9
+No count: 5
+Splits: ['Outlook' 'Temperature' 'Humidity' 'Wind']
+
+================================================
+Split: Outlook
+
+Outlook Count: {'Sunny': 5, 'Rain': 5, 'Overcast': 4}
+
+Counts of Outlook - Sunny: {'No': 3, 'Yes': 2}
+Entropy for Outlook - Sunny: 0.971
+
+
+Counts of Outlook - Overcast: {'Yes': 4}
+Entropy for Outlook - Overcast: 0.0
+
+
+Counts of Outlook - Rain: {'Yes': 3, 'No': 2}
+Entropy for Outlook - Rain: 0.971
+
+Entropy for Outlook: 0.694
+
+Information Gain of Outlook =  0.246
+
+================================================
+Split: Temperature
+
+Temperature Count: {'Mild': 6, 'Hot': 4, 'Cool': 4}
+
+Counts of Temperature - Hot: {'No': 2, 'Yes': 2}
+Entropy for Temperature - Hot: 1.0
+
+
+Counts of Temperature - Mild: {'Yes': 4, 'No': 2}
+Entropy for Temperature - Mild: 0.918
+
+
+Counts of Temperature - Cool: {'Yes': 3, 'No': 1}
+Entropy for Temperature - Cool: 0.811
+
+Entropy for Temperature: 0.911
+
+Information Gain of Temperature =  0.029
+
+================================================
+Split: Humidity
+
+Humidity Count: {'High': 7, 'Normal': 7}
+
+Counts of Humidity - High: {'No': 4, 'Yes': 3}
+Entropy for Humidity - High: 0.985
+
+
+Counts of Humidity - Normal: {'Yes': 6, 'No': 1}
+Entropy for Humidity - Normal: 0.592
+
+Entropy for Humidity: 0.788
+
+Information Gain of Humidity =  0.151
+
+================================================
+Split: Wind
+
+Wind Count: {'Weak': 8, 'Strong': 6}
+
+Counts of Wind - Weak: {'Yes': 6, 'No': 2}
+Entropy for Wind - Weak: 0.811
+
+
+Counts of Wind - Strong: {'No': 3, 'Yes': 3}
+Entropy for Wind - Strong: 1.0
+
+Entropy for Wind: 0.892
+
+Information Gain of Wind =  0.048
+
+================================================
+Information Gain:
+Outlook = 0.246
+Temperature = 0.029
+Humidity = 0.151
+Wind = 0.048
+
+Maximum Information Gain: 0.246
+Root Node of the decision tree is: Outlook
+================================================
+[20bcs098@mepcolinux ~]$exit
+exit
+
+Script done on Mon 21 Aug 2023 08:02:02 AM IST

@@ -1,0 +1,11 @@
+Node1,Node2,Cost
+S,A,3
+S,D,2
+A,B,5
+A,C,10
+B,C,2
+B,E,1
+C,G,4
+D,B,1
+B,E,1
+E,G,3
